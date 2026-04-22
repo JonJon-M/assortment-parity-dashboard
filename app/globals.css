@@ -58,6 +58,9 @@ tr:last-child td{border-bottom:none} tbody tr:hover{background:#0f172a88}
 .tag-never{background:#7f1d1d33;color:#fca5a5;border:1px solid #7f1d1d} .tag-old{background:#78350f33;color:#fcd34d;border:1px solid #78350f} .tag-recent{background:#14532d33;color:#86efac;border:1px solid #14532d}
 .tag-wh{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:500} .tag-timaurd{background:#1e3a5f;color:#93c5fd} .tag-safari{background:#1c3328;color:#86efac}
 .sparkbar{display:inline-block;height:10px;border-radius:3px;vertical-align:middle}
+.chart-desc{font-size:11px;color:#64748b;line-height:1.55;margin-bottom:12px}
+.section-desc{font-size:11px;color:#64748b;line-height:1.55;margin-bottom:14px;margin-top:-8px}
+.trend-insight{background:#0f172a;border-left:3px solid #3b82f6;border-radius:0 6px 6px 0;padding:8px 12px;font-size:11px;color:#94a3b8;margin-top:10px;line-height:1.5}
 .pagination{display:flex;gap:5px;align-items:center;justify-content:flex-end;padding:10px 18px;border-top:1px solid #334155;flex-wrap:wrap}
 .page-btn{background:#0f172a;border:1px solid #334155;color:#94a3b8;padding:4px 9px;border-radius:5px;font-size:12px;cursor:pointer}
 .page-btn:hover,.page-btn.active{background:#3b82f6;color:white;border-color:#3b82f6} .page-info{color:#64748b;font-size:12px}

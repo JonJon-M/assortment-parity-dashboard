@@ -105,6 +105,18 @@ function ParityTab({ summary, monthly, catParity }: { summary: PariySummary; mon
   const missCatInst = useRef<Chart | null>(null)
   const sf = useSortFilter<MissingEfficient>(missData, 'recent_qty')
 
+  const trendInsight = (() => {
+    if (monthly.length < 2) return null
+    const byM: Record<string, { t: number; s: number }> = {}
+    monthly.forEach(r => { if (!byM[r.month]) byM[r.month] = { t: 0, s: 0 }; if (r.warehouse === WH_T) byM[r.month].t = r.active_skus; else byM[r.month].s = r.active_skus })
+    const ms = Object.keys(byM).sort()
+    const first = ms[0], last = ms[ms.length - 1]
+    const tΔ = byM[last].t - byM[first].t, sΔ = byM[last].s - byM[first].s
+    const dir = (n: number) => n >= 0 ? `+${n}` : `${n}`
+    const peak = ms.reduce((p, m) => byM[m].t + byM[m].s > byM[p].t + byM[p].s ? m : p, ms[0])
+    return `TIMAURD: ${dir(tΔ)} SKUs | SAFARI: ${dir(sΔ)} SKUs (${first} → ${last}). Combined peak was ${peak} with ${byM[peak].t + byM[peak].s} active SKUs.`
+  })()
+
   useEffect(() => {
     if (splitRef.current) new Chart(splitRef.current.getContext('2d')!, { type: 'doughnut', data: { labels: ['Both','TIMAURD Only','SAFARI Only'], datasets: [{ data: [summary.common_skus, summary.only_timaurd, summary.only_safari], backgroundColor: ['#3b82f6','#f97316','#22c55e'], borderWidth: 0 }] }, options: { plugins: { legend: { position: 'right', labels: { color: '#94a3b8', boxWidth: 12, font: { size: 11 } } } }, cutout: '68%' } })
     const byMonth: Record<string, { t: number; s: number }> = {}
@@ -156,6 +168,7 @@ function ParityTab({ summary, monthly, catParity }: { summary: PariySummary; mon
         <div className="charts-row r2">
           <div className="chart-card">
             <h3>SKU Overlap Overview</h3>
+            <p className="chart-desc">How SKUs are distributed across warehouses. SKUs stocked in both warehouses indicate alignment; warehouse-exclusive SKUs are potential listing gaps for the other site.</p>
             <div className="parity-boxes">
               <div className="parity-box blue"><div className="pv" style={{color:'#60a5fa'}}>{fmt(summary.common_skus)}</div><div className="pl">In Both</div><div className="pp" style={{color:'#60a5fa'}}>{(summary.common_skus/summary.total_unique*100).toFixed(1)}%</div></div>
               <div className="parity-box orange"><div className="pv" style={{color:'#fb923c'}}>{fmt(summary.only_timaurd)}</div><div className="pl">TIMAURD Only</div><div className="pp" style={{color:'#fb923c'}}>{(summary.only_timaurd/summary.total_unique*100).toFixed(1)}%</div></div>
@@ -163,11 +176,17 @@ function ParityTab({ summary, monthly, catParity }: { summary: PariySummary; mon
             </div>
             <canvas ref={splitRef} height={160} />
           </div>
-          <div className="chart-card"><h3>Monthly Active SKUs Trend</h3><canvas ref={trendRef} height={220} /></div>
+          <div className="chart-card">
+            <h3>Monthly Active SKUs Trend</h3>
+            <p className="chart-desc">Active SKUs per warehouse each month — any SKU with at least one sale that month is counted. Rising lines mean assortment breadth is growing; drops flag delisting or supply gaps.</p>
+            <canvas ref={trendRef} height={200} />
+            {trendInsight && <div className="trend-insight">{trendInsight}</div>}
+          </div>
         </div>
       </div>
       <div className="section">
         <div className="section-title"><span className="dot dot-green" />Stock Status Breakdown</div>
+        <p className="section-desc">Of all SKUs listed per warehouse, what share currently hold stock vs. are at zero. A high zero-stock slice means listings are live but unfulfillable — a direct hit to conversion.</p>
         <div className="charts-row r2">
           <div className="chart-card"><h3>TIMAURD Stock Distribution</h3><canvas ref={stockTRef} height={200} /></div>
           <div className="chart-card"><h3>SAFARI Stock Distribution</h3><canvas ref={stockSRef} height={200} /></div>
@@ -175,6 +194,7 @@ function ParityTab({ summary, monthly, catParity }: { summary: PariySummary; mon
       </div>
       <div className="section">
         <div className="section-title"><span className="dot dot-amber" />Category Depth Parity (Top 12)</div>
+        <p className="section-desc">Side-by-side SKU count for the top 12 categories. A large gap between bars in any category means one warehouse is significantly under-assorted there — a direct stocking opportunity.</p>
         <div className="charts-row"><div className="chart-card"><h3>SKU Count by Category per Warehouse</h3><canvas ref={catRef} height={220} /></div></div>
       </div>
       <div className="section">
