@@ -110,11 +110,17 @@ function ParityTab({ summary, monthly, catParity }: { summary: PariySummary; mon
     const byM: Record<string, { t: number; s: number }> = {}
     monthly.forEach(r => { if (!byM[r.month]) byM[r.month] = { t: 0, s: 0 }; if (r.warehouse === WH_T) byM[r.month].t = r.active_skus; else byM[r.month].s = r.active_skus })
     const ms = Object.keys(byM).sort()
-    const first = ms[0], last = ms[ms.length - 1]
-    const tΔ = byM[last].t - byM[first].t, sΔ = byM[last].s - byM[first].s
-    const dir = (n: number) => n >= 0 ? `+${n}` : `${n}`
-    const peak = ms.reduce((p, m) => byM[m].t + byM[m].s > byM[p].t + byM[p].s ? m : p, ms[0])
-    return `TIMAURD: ${dir(tΔ)} SKUs | SAFARI: ${dir(sΔ)} SKUs (${first} → ${last}). Combined peak was ${peak} with ${byM[peak].t + byM[peak].s} active SKUs.`
+    const cur = ms[ms.length - 1], prev = ms[ms.length - 2], first = ms[0]
+    const tNow = byM[cur].t, tPrev = byM[prev].t, tFirst = byM[first].t
+    const sNow = byM[cur].s, sPrev = byM[prev].s, sFirst = byM[first].s
+    const tMoM = tNow - tPrev, sMoM = sNow - sPrev
+    const tNet = tNow - tFirst, sNet = sNow - sFirst
+    // count consecutive months SAFARI has been declining
+    let sStreak = 0
+    for (let i = ms.length - 1; i > 0; i--) { if (byM[ms[i]].s < byM[ms[i-1]].s) sStreak++; else break }
+    const arrow = (n: number) => n > 0 ? '▲' : n < 0 ? '▼' : '→'
+    const sign = (n: number) => n > 0 ? `+${n}` : `${n}`
+    return { cur, tNow, tMoM, tNet, sNow, sMoM, sNet, sStreak, arrow, sign }
   })()
 
   useEffect(() => {
@@ -180,7 +186,23 @@ function ParityTab({ summary, monthly, catParity }: { summary: PariySummary; mon
             <h3>Monthly Active SKUs Trend</h3>
             <p className="chart-desc">Active SKUs per warehouse each month — any SKU with at least one sale that month is counted. Rising lines mean assortment breadth is growing; drops flag delisting or supply gaps.</p>
             <canvas ref={trendRef} height={200} />
-            {trendInsight && <div className="trend-insight">{trendInsight}</div>}
+            {trendInsight && <div className="trend-insight">
+              <div style={{fontWeight:600,color:'#cbd5e1',marginBottom:5,fontSize:12}}>{trendInsight.cur} — current month</div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'6px 16px'}}>
+                <span style={{color: trendInsight.tMoM >= 0 ? '#22c55e' : '#ef4444'}}>
+                  {trendInsight.arrow(trendInsight.tMoM)} TIMAURD &nbsp;<strong>{trendInsight.sign(trendInsight.tMoM)} MoM</strong> → {trendInsight.tNow.toLocaleString()} active SKUs
+                </span>
+                <span style={{color: trendInsight.sMoM >= 0 ? '#22c55e' : '#ef4444'}}>
+                  {trendInsight.arrow(trendInsight.sMoM)} SAFARI &nbsp;<strong>{trendInsight.sign(trendInsight.sMoM)} MoM</strong> → {trendInsight.sNow.toLocaleString()} active SKUs
+                </span>
+                <span style={{color:'#64748b'}}>Since Jan 2025: TIMAURD {trendInsight.sign(trendInsight.tNet)} SKUs overall</span>
+                <span style={{color:'#64748b'}}>
+                  {trendInsight.sStreak > 1
+                    ? `SAFARI declining for ${trendInsight.sStreak} consecutive months`
+                    : `Since Jan 2025: SAFARI ${trendInsight.sign(trendInsight.sNet)} SKUs overall`}
+                </span>
+              </div>
+            </div>}
           </div>
         </div>
       </div>
